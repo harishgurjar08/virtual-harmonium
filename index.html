@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AR Virtual Harmonium - 3D Interactive Indian Classical Music</title>
+    <meta name="description" content="Interactive Web-based AR Virtual Harmonium with 3D keyboard, AI finger tracking, realistic multi-reed sound synthesis, Tanpura drone, and Sargam practice tutor.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- MediaPipe Hands & Camera Utils -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <!-- Fullscreen AR Stage -->
+    <div id="ar-stage">
+        <!-- Live Webcam Feed (Mirrored for intuitive interaction) -->
+        <div id="camera-wrapper">
+            <video id="webcam-video" autoplay playsinline muted class="mirrored"></video>
+        </div>
+
+        <!-- 2D Canvas for MediaPipe Hand Skeleton & Glowing Fingertip Overlay -->
+        <canvas id="hand-overlay-canvas"></canvas>
+
+        <!-- Three.js 3D Viewport for Virtual Harmonium -->
+        <div id="harmonium-3d-container"></div>
+    </div>
+
+    <!-- UI Overlay: Top Navigation Bar -->
+    <header class="ui-layer top-navbar">
+        <div class="brand-section">
+            <div class="brand-icon">स</div>
+            <div class="brand-text">
+                <h1>AR Virtual Harmonium</h1>
+                <span>3D Hand Tracking &bull; Sargam Tutor</span>
+            </div>
+        </div>
+
+        <!-- Live Status Indicators -->
+        <div class="status-pill-group">
+            <div id="camera-status-pill" class="status-pill off">Camera: Off</div>
+            <div id="hands-status-pill" class="status-pill idle">Hands: 0</div>
+        </div>
+
+        <!-- Top Action Buttons -->
+        <div class="top-actions">
+            <button id="btn-toggle-camera" class="btn btn-primary" title="Start live webcam hand tracking">
+                📷 Start AR Camera
+            </button>
+            <button id="btn-drone" class="btn" title="Toggle classical Tanpura Sa-Pa drone accompaniment">
+                🪕 Tanpura: OFF
+            </button>
+            <button id="btn-toggle-practice" class="btn" title="Toggle interactive Sargam training mode">
+                🎓 Practice Mode
+            </button>
+            <button id="btn-help" class="btn btn-icon-only" title="Quick Guide & Keyboard Shortcuts">
+                ❓
+            </button>
+        </div>
+    </header>
+
+    <!-- UI Overlay: Interactive Music Practice HUD -->
+    <section id="practice-hud" class="ui-layer practice-hud">
+        <div class="practice-header">
+            <div class="target-badge-wrapper">
+                <div class="target-note-badge">
+                    <span id="target-devanagari">सा</span>
+                    <span id="target-western">Sa (C4)</span>
+                </div>
+                <div class="target-info">
+                    <span class="label">Target Note</span>
+                    <select id="lesson-select" class="custom-select" title="Choose practice lesson or song">
+                        <!-- Populated dynamically via JS -->
+                    </select>
+                    <div class="upcoming-notes-row">
+                        <span class="sub-label">Next:</span>
+                        <div id="upcoming-notes-list" class="upcoming-badges"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="practice-actions">
+                <button id="btn-metronome" class="btn" title="Toggle rhythmic metronome clicks">
+                    ⏱ Metronome: OFF
+                </button>
+            </div>
+        </div>
+
+        <div class="practice-stats-bar">
+            <span>Score: <strong id="practice-score-value" class="score-badge">0</strong></span>
+            <span>Streak: <strong id="practice-streak-value" class="score-badge">0x</strong></span>
+            <div class="progress-track" title="Lesson completion progress">
+                <div id="practice-progress-fill" class="progress-fill"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Floating Feedback Toast (Displays "Sahi!", "Great!", or notes) -->
+    <div id="feedback-toast" class="feedback-toast">Sahi! Perfect!</div>
+
+    <!-- UI Overlay: Bottom Floating Control Console -->
+    <footer class="ui-layer bottom-control-bar">
+        <!-- Cluster 1: Volume & Sound -->
+        <div class="control-cluster">
+            <button id="btn-mute" class="btn btn-icon-only" title="Mute/Unmute sound">🔊 Sound</button>
+            <div class="slider-group" title="Master Volume">
+                <span>Vol</span>
+                <input id="volume-slider" type="range" min="0" max="1" step="0.01" value="0.8">
+            </div>
+        </div>
+
+        <div class="control-divider"></div>
+
+        <!-- Cluster 2: Bellows & Scale -->
+        <div class="control-cluster">
+            <div class="bellows-gauge" title="Air Reservoir Pressure">
+                <span>Air</span>
+                <div class="gauge-track">
+                    <div id="bellows-pressure-fill" class="gauge-fill"></div>
+                </div>
+            </div>
+
+            <select id="bellows-mode-select" class="custom-select" title="Bellows Air Simulation Mode">
+                <option value="auto">Bellows: Auto</option>
+                <option value="manual">Bellows: Manual Pump</option>
+            </select>
+            <button id="btn-pump-bellows" class="btn btn-icon-only" style="display: none;" title="Pump air reservoir">
+                💨 Pump
+            </button>
+
+            <select id="scale-root-select" class="custom-select" title="Root Scale Tuning (Indian & Western)">
+                <option value="C4">Scale: C4 (Safed 1)</option>
+                <option value="C#4">Scale: C#4 (Kali 1)</option>
+                <option value="D4">Scale: D4 (Safed 2)</option>
+                <option value="D#4">Scale: D#4 (Kali 2)</option>
+            </select>
+        </div>
+
+        <div class="control-divider"></div>
+
+        <!-- Cluster 3: Keyboard Layout, Transparency & 3D Camera Views -->
+        <div class="control-cluster">
+            <select id="keyboard-layout-select" class="custom-select" title="Harmonium Keyboard Size">
+                <option value="saptak8">8 Notes (Sa to Ṡa)</option>
+                <option value="full13">Full Harmonium (13 Keys)</option>
+            </select>
+
+            <button id="btn-glass-mode" class="btn btn-glass" title="Toggle Translucent AR Glass Mode (See your hands through the keys!)">
+                🪟 Glass: OFF
+            </button>
+
+            <div class="slider-group" title="Harmonium Transparency (Lower to see webcam hands through harmonium)">
+                <span>Harm</span>
+                <input id="harm-opacity-slider" type="range" min="0.2" max="1" step="0.05" value="0.85">
+            </div>
+
+            <div class="slider-group" title="Harmonium Height (Adjust position so it doesn't block your hands)">
+                <span>Pos</span>
+                <input id="harm-pos-slider" type="range" min="-1.25" max="-0.4" step="0.05" value="-0.85">
+            </div>
+
+            <select id="camera-view-select" class="custom-select" title="3D Camera Angle Preset">
+                <option value="ar-lap">AR Lap View</option>
+                <option value="front">3D Front View</option>
+                <option value="top">Top View</option>
+            </select>
+
+            <button id="btn-mirror-camera" class="btn btn-icon-only active" title="Toggle camera mirroring">
+                🪞 Mirror
+            </button>
+
+            <div class="slider-group" title="Camera Background Opacity">
+                <span>Cam</span>
+                <input id="cam-opacity-slider" type="range" min="0.1" max="1" step="0.05" value="0.85">
+            </div>
+        </div>
+
+        <div class="control-divider"></div>
+
+        <!-- Cluster 4: Performance Recorder -->
+        <div class="control-cluster recorder-cluster">
+            <button id="btn-record" class="btn btn-record" title="Record performance">
+                ⏺ Record
+            </button>
+            <span id="record-pulse-dot" class="pulse-dot"></span>
+            <span id="record-timer" class="record-timer">00:00</span>
+            <button id="btn-play-recording" class="btn" disabled title="Play back recorded performance">
+                ▶ Play
+            </button>
+            <button id="btn-download-audio" class="btn btn-icon-only" disabled title="Download audio recording (.webm)">
+                ⬇ Audio
+            </button>
+            <button id="btn-download-sheet" class="btn btn-icon-only" disabled title="Download recorded notes JSON transcript">
+                📄 Sheet
+            </button>
+        </div>
+    </footer>
+
+    <!-- Modal: Help & Sargam Guide -->
+    <div id="help-modal" class="modal-backdrop">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>🎵 How to Play AR Virtual Harmonium</h2>
+                <button id="btn-close-help" class="btn-close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.6;">
+                    Experience playing a real Indian Harmonium in Augmented Reality right from your browser! You can play using your webcam with AI hand tracking, or via physical keyboard and mouse.
+                </p>
+
+                <div class="guide-step-grid">
+                    <div class="guide-step-card">
+                        <h3>✋ 1. Hand Tracking (AR)</h3>
+                        <p>Click <strong>Start AR Camera</strong> and allow webcam access. Position your hand so your fingers are visible. Point and lower your index or middle finger onto the 3D keys to play notes!</p>
+                    </div>
+                    <div class="guide-step-card">
+                        <h3>🎼 2. Sargam Swaras</h3>
+                        <p>The keys represent the 8 primary Indian Classical swaras: <strong>Sa, Re, Ga, Ma, Pa, Dha, Ni, Ṡa</strong> (सा, रे, ग, म, प, ध, नि, सां) with realistic double-reed resonant sound.</p>
+                    </div>
+                    <div class="guide-step-card">
+                        <h3>🪕 3. Tanpura & Bellows</h3>
+                        <p>Turn on <strong>Tanpura</strong> for continuous classical drone accompaniment. Switch bellows to <em>Manual</em> to pump air with your left hand or the pump button!</p>
+                    </div>
+                    <div class="guide-step-card">
+                        <h3>🎓 4. Practice Mode</h3>
+                        <p>Learn step-by-step with structured Indian Classical Alankars and songs like <em>Raghupati Raghav</em>. Follow the glowing keys!</p>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 14px; color: var(--gold-bright); margin-top: 14px;">🎹 Computer Keyboard Shortcuts</h3>
+                <table class="keyboard-shortcuts-table">
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Sargam Note</th>
+                            <th>Western</th>
+                            <th>Devanagari</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><kbd>A</kbd> / <kbd>1</kbd></td><td>Sa (Shuddha)</td><td>C4</td><td>सा</td></tr>
+                        <tr><td><kbd>W</kbd></td><td>re (Komal)</td><td>C#4</td><td>रे़</td></tr>
+                        <tr><td><kbd>S</kbd> / <kbd>2</kbd></td><td>Re (Shuddha)</td><td>D4</td><td>रे</td></tr>
+                        <tr><td><kbd>E</kbd></td><td>ga (Komal)</td><td>D#4</td><td>ग़</td></tr>
+                        <tr><td><kbd>D</kbd> / <kbd>3</kbd></td><td>Ga (Shuddha)</td><td>E4</td><td>ग</td></tr>
+                        <tr><td><kbd>F</kbd> / <kbd>4</kbd></td><td>Ma (Shuddha)</td><td>F4</td><td>म</td></tr>
+                        <tr><td><kbd>T</kbd></td><td>Ma' (Tivra)</td><td>F#4</td><td>म॑</td></tr>
+                        <tr><td><kbd>G</kbd> / <kbd>5</kbd></td><td>Pa</td><td>G4</td><td>प</td></tr>
+                        <tr><td><kbd>Y</kbd></td><td>dha (Komal)</td><td>G#4</td><td>ध़</td></tr>
+                        <tr><td><kbd>H</kbd> / <kbd>6</kbd></td><td>Dha (Shuddha)</td><td>A4</td><td>ध</td></tr>
+                        <tr><td><kbd>U</kbd></td><td>ni (Komal)</td><td>A#4</td><td>नि़</td></tr>
+                        <tr><td><kbd>J</kbd> / <kbd>7</kbd></td><td>Ni (Shuddha)</td><td>B4</td><td>नि</td></tr>
+                        <tr><td><kbd>K</kbd> / <kbd>8</kbd></td><td>Ṡa (Tar Saptak)</td><td>C5</td><td>सां</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Lesson Complete Celebration -->
+    <div id="lesson-complete-modal" class="modal-backdrop">
+        <div class="modal-card celebration-content">
+            <div class="celebration-stars">🌟 🌟 🌟</div>
+            <h2 style="color: var(--gold-bright); font-size: 24px; margin-bottom: 6px;">Badhaai Ho! Lesson Complete!</h2>
+            <p style="color: var(--text-secondary); font-size: 14px;">You have successfully finished this Sargam exercise.</p>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div id="final-score-val" class="val">1200</div>
+                    <div class="lbl">Total Score</div>
+                </div>
+                <div class="stat-item">
+                    <div id="final-accuracy-val" class="val">96%</div>
+                    <div class="lbl">Accuracy</div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 12px; margin-top: 20px;">
+                <button id="btn-replay-lesson" class="btn">🔁 Practice Again</button>
+                <button id="btn-next-lesson" class="btn btn-primary">Next Lesson ➔</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Modules -->
+    <script src="js/audio.js"></script>
+    <script src="js/harmonium3d.js"></script>
+    <script src="js/handTracker.js"></script>
+    <script src="js/practice.js"></script>
+    <script src="js/recorder.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

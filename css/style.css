@@ -1,0 +1,786 @@
+/* ==========================================================================
+   AR Virtual Harmonium - Modern Responsive Stylesheet
+   Theme: Glassmorphism with Indian Classical Warm Saffron & Rosewood Luster
+   ========================================================================== */
+
+:root {
+    --bg-dark: #0f1015;
+    --panel-bg: rgba(22, 24, 33, 0.78);
+    --panel-border: rgba(255, 200, 100, 0.18);
+    --gold: #dfb142;
+    --gold-bright: #ffcc44;
+    --gold-glow: rgba(223, 177, 66, 0.4);
+    --saffron: #ff8c1a;
+    --saffron-bright: #ffa333;
+    --crimson: #d32f2f;
+    --green-accent: #2ecc71;
+    --text-primary: #ffffff;
+    --text-secondary: #c5c7d0;
+    --text-muted: #8b8e9f;
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-sargam: 'Noto Sans Devanagari', 'Mangal', 'Segoe UI', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-dark);
+    font-family: var(--font-main);
+    color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Main Fullscreen AR Stage
+   ========================================================================== */
+#ar-stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: radial-gradient(circle at center, #1b151e 0%, #0c0d12 100%);
+}
+
+/* Camera Wrapper & Video */
+#camera-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#webcam-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.82;
+    transition: opacity 0.3s ease;
+}
+
+#webcam-video.mirrored {
+    transform: scaleX(-1);
+}
+
+/* Three.js 3D Harmonium Viewport */
+#harmonium-3d-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    cursor: pointer;
+}
+
+/* MediaPipe 2D Hand Landmark Overlay (Z-index 5: On TOP of 3D Harmonium so hands are always clearly visible) */
+#hand-overlay-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   UI Overlays & HUD Layers (Z-Index: 10)
+   ========================================================================== */
+.ui-layer {
+    position: absolute;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+/* Top Navigation Bar */
+.top-navbar {
+    top: 14px;
+    left: 18px;
+    right: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--saffron), #8b2500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(255, 140, 26, 0.4);
+    font-family: var(--font-sargam);
+}
+
+.brand-text h1 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    background: linear-gradient(90deg, #fff, var(--gold-bright));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand-text span {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+}
+
+/* Status Pills */
+.status-pill-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-pill {
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+.status-pill::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #666;
+}
+
+.status-pill.active {
+    border-color: rgba(46, 204, 113, 0.4);
+    color: #a3ffc7;
+}
+
+.status-pill.active::before {
+    background-color: var(--green-accent);
+    box-shadow: 0 0 8px var(--green-accent);
+}
+
+.status-pill.idle::before {
+    background-color: var(--gold);
+}
+
+.status-pill.off::before {
+    background-color: #777;
+}
+
+/* Top Action Buttons */
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Buttons Styling */
+.btn {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--gold);
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--saffron), #bd4400);
+    border-color: rgba(255, 200, 100, 0.3);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(255, 140, 26, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--saffron-bright), #d44d00);
+    box-shadow: 0 6px 20px rgba(255, 140, 26, 0.5);
+}
+
+.btn.active {
+    background: linear-gradient(135deg, var(--gold), #996e11);
+    color: #1a1200;
+    font-weight: 700;
+    border-color: var(--gold-bright);
+    box-shadow: 0 0 14px var(--gold-glow);
+}
+
+.btn-glass {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 200, 100, 0.4);
+    color: var(--gold-bright);
+}
+
+.btn-glass.active {
+    background: linear-gradient(135deg, rgba(223, 177, 66, 0.4), rgba(255, 140, 26, 0.3));
+    border-color: var(--gold-bright);
+    box-shadow: 0 0 16px rgba(223, 177, 66, 0.5);
+    color: #ffffff;
+}
+
+.btn-icon-only {
+    padding: 8px 12px;
+}
+
+/* ==========================================================================
+   Practice Mode Floating HUD
+   ========================================================================== */
+.practice-hud {
+    top: 86px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none; /* activated when practice starts */
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: rgba(18, 16, 24, 0.86);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translate(-50%, -20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.practice-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 20px;
+}
+
+.target-badge-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.target-note-badge {
+    width: 68px;
+    height: 68px;
+    border-radius: 16px;
+    background: radial-gradient(circle at center, #352610 0%, #171106 100%);
+    border: 2px solid var(--gold-bright);
+    box-shadow: 0 0 24px var(--gold-glow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: pulseTarget 1.4s infinite ease-in-out;
+}
+
+@keyframes pulseTarget {
+    0%, 100% { box-shadow: 0 0 16px rgba(223, 177, 66, 0.35); transform: scale(1); }
+    50% { box-shadow: 0 0 28px rgba(255, 200, 66, 0.65); transform: scale(1.04); }
+}
+
+#target-devanagari {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--gold-bright);
+    font-family: var(--font-sargam);
+    line-height: 1;
+}
+
+#target-western {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffeedd;
+    margin-top: 2px;
+}
+
+.target-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.target-info .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+.target-info .song-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+/* Upcoming Notes */
+.upcoming-notes-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.upcoming-notes-row .sub-label {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.upcoming-badges {
+    display: flex;
+    gap: 6px;
+}
+
+.upcoming-badge {
+    padding: 3px 9px;
+    font-size: 12px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-family: var(--font-sargam);
+}
+
+/* Progress bar & score */
+.practice-stats-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.progress-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--saffron));
+    transition: width 0.25s ease;
+}
+
+.score-badge {
+    color: var(--gold-bright);
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   Bottom Floating Control Console
+   ========================================================================== */
+.bottom-control-bar {
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 18px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+    max-width: 95vw;
+}
+
+/* Control Clusters */
+.control-cluster {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* Sliders */
+.slider-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--gold-bright);
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+/* Select Dropdowns */
+.custom-select {
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-sm);
+    outline: none;
+    cursor: pointer;
+}
+
+.custom-select option {
+    background-color: #1a1a24;
+    color: #fff;
+}
+
+/* Bellows Gauge */
+.bellows-gauge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.gauge-track {
+    width: 48px;
+    height: 7px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.gauge-fill {
+    width: 100%;
+    height: 100%;
+    background-color: var(--gold);
+    transition: width 0.15s ease, background-color 0.2s;
+}
+
+/* Recording Controls */
+.recorder-cluster {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-record.recording {
+    background: var(--crimson);
+    color: #fff;
+    border-color: #ff5555;
+    animation: pulseRecord 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseRecord {
+    0%, 100% { box-shadow: 0 0 8px rgba(211, 47, 47, 0.5); }
+    50% { box-shadow: 0 0 18px rgba(255, 80, 80, 0.8); }
+}
+
+.pulse-dot {
+    display: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #ff3333;
+    animation: blink 0.8s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+.record-timer {
+    font-size: 12px;
+    font-family: monospace;
+    font-weight: bold;
+    color: var(--gold-bright);
+    min-width: 40px;
+}
+
+/* ==========================================================================
+   Feedback Toast Banner
+   ========================================================================== */
+.feedback-toast {
+    position: absolute;
+    top: 180px;
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    padding: 8px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 700;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    z-index: 50;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.feedback-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+}
+
+.feedback-toast.correct {
+    background: rgba(46, 204, 113, 0.95);
+    color: #0b2e15;
+    border: 1px solid #7dffb3;
+}
+
+.feedback-toast.wrong {
+    background: rgba(231, 76, 60, 0.95);
+    color: #ffffff;
+    border: 1px solid #ff9999;
+}
+
+/* ==========================================================================
+   Modals (Help, Lesson Complete)
+   ========================================================================== */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none; /* flex when open */
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-card {
+    background: #181922;
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+    width: 90%;
+    max-width: 580px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 26px;
+    color: var(--text-primary);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 12px;
+}
+
+.modal-header h2 {
+    font-size: 19px;
+    color: var(--gold-bright);
+}
+
+.btn-close-modal {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.btn-close-modal:hover {
+    color: #fff;
+}
+
+.guide-step-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.guide-step-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 14px;
+}
+
+.guide-step-card h3 {
+    font-size: 14px;
+    color: var(--gold);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.guide-step-card p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.keyboard-shortcuts-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 12px;
+}
+
+.keyboard-shortcuts-table th, .keyboard-shortcuts-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.keyboard-shortcuts-table th {
+    color: var(--text-muted);
+}
+
+.keyboard-shortcuts-table kbd {
+    background: rgba(255, 255, 255, 0.12);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-weight: bold;
+    color: var(--gold-bright);
+}
+
+/* Lesson Complete Modal */
+.celebration-content {
+    text-align: center;
+    padding: 10px 0;
+}
+
+.celebration-stars {
+    font-size: 40px;
+    margin: 10px 0;
+}
+
+.stats-grid {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 18px 0;
+}
+
+.stat-item .val {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold-bright);
+}
+
+.stat-item .lbl {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+@media (max-width: 900px) {
+    .top-navbar {
+        left: 10px;
+        right: 10px;
+        top: 10px;
+        padding: 8px 14px;
+    }
+    .brand-text h1 {
+        font-size: 14px;
+    }
+    .status-pill-group {
+        display: none; /* save space on small screens */
+    }
+    .bottom-control-bar {
+        bottom: 10px;
+        padding: 8px 12px;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .guide-step-grid {
+        grid-template-columns: 1fr;
+    }
+}
