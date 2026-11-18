@@ -2,11 +2,10 @@
   "name": "ar-virtual-harmonium",
   "version": "1.0.0",
   "description": "Interactive Web-based AR Virtual Harmonium with 3D Three.js keyboard and MediaPipe hand tracking",
-  "main": "server.js",
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "serve": "node server.js"
+    "build": "echo 'Static build ready'"
   },
   "keywords": [
     "harmonium",
